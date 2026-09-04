@@ -1,0 +1,413 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import PixelRain from '@/components/pixel-rain'
+import IntroScreen from '@/components/intro-screen'
+import FeedbackGallery from '@/components/feedback-gallery'
+import FeaturedPosts from '@/components/featured-posts'
+import ContactSection from '@/components/contact-section'
+import VisitorCounter from '@/components/visitor-counter'
+
+/* ────────────────────────────────────────────────
+   K2S Bhai — Web3 Community Manager · Portfolio
+   premium retro-terminal edition
+   ──────────────────────────────────────────────── */
+
+const NAV_ITEMS = [
+  { s: 1, label: '[ profile ]' },
+  { s: 2, label: '[ work ]' },
+  { s: 3, label: '[ team feedback ]' },
+  { s: 4, label: '[ featured posts ]' },
+  { s: 5, label: '[ main skills ]' },
+  { s: 6, label: '[ contact me ]' },
+]
+
+const WORK = [
+  {
+    key: 'MiniMax',
+    title: 'MiniMax',
+    category: 'ai',
+    img: '/placeholder.svg',
+    lines: ['├─ AI content creator partner'],
+    details: [
+      '├─ AI content creator partnership',
+      '├─ producing threads, demos & content',
+      '├─ showcasing AI products and tools',
+      '├─ turning complex releases into simple content',
+      '├─ demo: x.com/k2sbhai/status/2085991903535734852',
+    ],
+    link: 'https://x.com/k2sbhai/status/2085991903535734852',
+  },
+  {
+    key: 'alibaba-cloud',
+    title: 'alibaba cloud',
+    category: 'ai',
+    img: '/placeholder.svg',
+    lines: ['├─ AI content & demos'],
+    details: [
+      '├─ AI content & demos partnership',
+      '├─ creating content for cloud + AI products',
+      '├─ showcasing tools to a wider audience',
+      '├─ turning launches into engaging posts',
+      '├─ demo: x.com/k2sbhai/status/2095328927330025555',
+    ],
+    link: 'https://x.com/k2sbhai/status/2095328927330025555',
+  },
+  {
+    key: 'seismic',
+    title: 'seismic',
+    category: 'web3',
+    img: '/seismic.png',
+    lines: ['├─ community leader'],
+    details: [
+      '├─ community leader position',
+      '├─ managing and scaling the community',
+      '├─ keeping the ecosystem alive and active',
+      '├─ driving engagement and execution',
+    ],
+  },
+  {
+    key: 'zama',
+    title: 'zama',
+    category: 'web3',
+    img: '/zama.png',
+    lines: ['├─ volunteer moderator'],
+    details: [
+      '├─ volunteer moderator position',
+      '├─ moderating community channels',
+      '├─ helping users with questions and issues',
+      '├─ keeping discussions healthy and on-topic',
+    ],
+  },
+]
+
+const SKILL_GROUPS = [
+  {
+    label: '[ ai ]',
+    skills: [
+      { name: 'AI content creation (x, threads, video)', level: 10 },
+      { name: 'AI model demos & free tools', level: 9 },
+      { name: 'modern web / frontend experiences', level: 9 },
+      { name: 'video production & screen demos', level: 8 },
+    ],
+  },
+  {
+    label: '[ web3 ]',
+    skills: [
+      { name: 'discord moderation & server ops', level: 10 },
+      { name: 'telegram community management', level: 10 },
+      { name: 'community growth & engagement', level: 9 },
+      { name: 'web3 ecosystem operations', level: 9 },
+    ],
+  },
+]
+
+const TAGLINE = 'ai + web3 content. ships tools. scales communities.'
+
+export default function Page() {
+  const [entered, setEntered] = useState(false)
+  const [activeSec, setActiveSec] = useState(1)
+  const [modalKey, setModalKey] = useState<string | null>(null)
+  const [typed, setTyped] = useState('')
+
+  const scrollerRef = useRef<HTMLDivElement>(null)
+
+  /* ── typewriter tagline after entering ── */
+  useEffect(() => {
+    if (!entered) return
+    let i = 0
+    const t = setInterval(() => {
+      i++
+      setTyped(TAGLINE.slice(0, i))
+      if (i >= TAGLINE.length) clearInterval(t)
+    }, 42)
+    return () => clearInterval(t)
+  }, [entered])
+
+  /* ── scroll-driven fade + active nav ── */
+  useEffect(() => {
+    if (!entered) return
+    const scroller = scrollerRef.current
+    if (!scroller) return
+
+    function updateFade() {
+      const vh = scroller!.clientHeight
+      const center = vh * 0.45
+      const range = vh * 0.55
+      const items = scroller!.querySelectorAll<HTMLElement>('.fade-row')
+      for (let i = 0; i < items.length; i++) {
+        const el = items[i]
+        const r = el.getBoundingClientRect()
+        const ey = r.top + r.height / 2
+        const dist = Math.abs(ey - center)
+        const t = 1 - Math.min(dist / range, 1)
+        const fade = 0.08 + t * 0.92
+        el.style.setProperty('--fade', fade.toFixed(3))
+      }
+    }
+
+    function updateActiveNav() {
+      const vh = scroller!.clientHeight
+      const mid = vh / 2
+      let closestIdx = 1
+      let closestDist = Infinity
+      scroller!.querySelectorAll<HTMLElement>('.sec').forEach((sec) => {
+        const r = sec.getBoundingClientRect()
+        const secMid = r.top + r.height / 2
+        const dist = Math.abs(secMid - mid)
+        if (dist < closestDist) {
+          closestDist = dist
+          closestIdx = Number(sec.dataset.idx)
+        }
+      })
+      setActiveSec(closestIdx)
+    }
+
+    let ticking = false
+    function onScroll() {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(() => {
+          updateFade()
+          updateActiveNav()
+          ticking = false
+        })
+      }
+    }
+
+    updateFade()
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      scroller.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [entered])
+
+  const scrollToSec = (s: number) => {
+    const sec = document.getElementById('sec' + s)
+    if (sec) sec.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const activeDetail = WORK.find((w) => w.key === modalKey)
+
+  return (
+    <main>
+      <PixelRain />
+
+      <IntroScreen entered={entered} onEnter={() => setEntered(true)} />
+
+      {/* ═══ PORTFOLIO ═══ */}
+      <div id="portfolio" className={`portfolio${entered ? ' show' : ''}`}>
+        <nav className="sidenav" aria-label="section navigation">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.s}
+              type="button"
+              className={`nav-link${activeSec === item.s ? ' active' : ''}`}
+              onClick={() => scrollToSec(item.s)}
+            >
+              <span className="nav-label">{item.label}</span>
+              <span className="nav-pip">{activeSec === item.s ? '■' : '□'}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="scroller" ref={scrollerRef}>
+          {/* 1 — profile / hero */}
+          <section className="sec" id="sec1" data-idx="1">
+            <div className="sec-inner">
+              <pre className="ascii-header fade-row">{`┌──────────────────────────────────┐
+│  PROFILE - K2S          │
+└──────────────────────────────────┘`}</pre>
+              <div className="profile-head fade-row">
+                <img src="/k2s.png" alt="K2S avatar" className="profile-av" />
+                <div>
+                  <h1 className="profile-name">K2S</h1>
+                  <p className="profile-tagline" aria-label={TAGLINE}>
+                    {typed}
+                    <span className="blink-cursor">_</span>
+                  </p>
+                  <p className="profile-status">
+                    <span className="status-dot" />
+                    Hire Me
+                  </p>
+                </div>
+              </div>
+              <p className="hero-bio fade-row text-pretty">
+                AI + web3 content creator. i make AI demos, videos, and threads that make new tools easy to understand, build modern web experiences, ship free AI tools, and help web3 communities grow. worked with MiniMax, Alibaba Cloud, seismic, and zama.
+              </p>
+              <div className="hero-ctas fade-row">
+                <button type="button" className="hero-btn hero-btn-primary" onClick={() => scrollToSec(2)}>
+                  [ view work ]
+                </button>
+                <button type="button" className="hero-btn" onClick={() => scrollToSec(6)}>
+                  [ contact me ]
+                </button>
+              </div>
+              <VisitorCounter variant="block" />
+              <pre className="ascii-footer fade-row">
+                ════════════════════════════════════
+              </pre>
+            </div>
+          </section>
+
+          {/* 2 — work */}
+          <section className="sec" id="sec2" data-idx="2">
+            <div className="sec-inner">
+              <pre className="ascii-header fade-row">{`┌──────────────────────────────────┐
+│  WORK  //  registry              │
+└──────────────────────────────────┘`}</pre>
+              <div className="cards-grid">
+                {WORK.map((w) => (
+                  <div key={w.key} className="card fade-row">
+                    <div className="card-img-wrap">
+                      <img src={w.img || '/placeholder.svg'} alt={w.title} className="card-img" />
+                    </div>
+                    <div className="card-content">
+                      <span className="card-cat" data-cat={w.category}>
+                        {w.category === 'ai' ? '◆ ai' : '◇ web3'}
+                      </span>
+                      <h3 className="card-title">{w.title}</h3>
+                      {w.lines.map((line) => (
+                        <p key={line} className="card-line">
+                          {line}
+                        </p>
+                      ))}
+                      <div className="card-actions">
+                        <button
+                          type="button"
+                          className="card-details-btn"
+                          onClick={() => setModalKey(w.key)}
+                        >
+                          [ all details ]
+                        </button>
+                        {w.link && (
+                          <a
+                            href={w.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="card-details-btn card-link-btn"
+                          >
+                            [ view content → ]
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* 3 — team feedback */}
+          <section className="sec" id="sec3" data-idx="3">
+            <div className="sec-inner">
+              <pre className="ascii-header fade-row">{`┌──────────────────────────────────┐
+│  TEAM FEEDBACK  //  receipts     │
+└──────────────────────────────────┘`}</pre>
+              <FeedbackGallery />
+            </div>
+          </section>
+
+          {/* 4 — featured posts */}
+          <section className="sec" id="sec4" data-idx="4">
+            <div className="sec-inner">
+              <pre className="ascii-header fade-row">{`┌──────────────────────────────────┐
+│  FEATURED POSTS  //  on x        │
+└──────────────────────────────────┘`}</pre>
+              <FeaturedPosts />
+            </div>
+          </section>
+
+          {/* 5 — main skills */}
+          <section className="sec" id="sec5" data-idx="5">
+            <div className="sec-inner">
+              <pre className="ascii-header fade-row">{`┌──────────────────────────────────┐
+│  MAIN SKILLS  //  capabilities   │
+└──────────────────────────────────┘`}</pre>
+              <div className="skills-groups">
+                {SKILL_GROUPS.map((group) => (
+                  <div key={group.label} className="skills-group fade-row">
+                    <p className="skills-group-label">
+                      ─── {group.label} ─────────────────
+                    </p>
+                    <ul className="skills-list">
+                      {group.skills.map((s) => (
+                        <li key={s.name} className="skill-row">
+                          <span className="skill-bar" aria-hidden="true">
+                            [{'█'.repeat(s.level)}{'░'.repeat(10 - s.level)}]
+                          </span>
+                          <span className="skill-name">{s.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <p className="skills-note fade-row">
+                └── ai + web3. content, tools, communities.
+              </p>
+            </div>
+          </section>
+
+          {/* 6 — contact */}
+          <section className="sec" id="sec6" data-idx="6">
+            <div className="sec-inner">
+              <pre className="ascii-header fade-row">{`┌──────────────────────────────────┐
+│  CONTACT ME  //  channels        │
+└──────────────────────────────────┘`}</pre>
+              <ContactSection />
+              <pre className="ascii-footer fade-row">
+                ════════════════════════════════════
+              </pre>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* ═══ DETAIL MODAL ═══ */}
+      <div
+        className={`modal-overlay${modalKey ? ' open' : ''}`}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) setModalKey(null)
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!modalKey}
+      >
+        <div className="modal-box">
+          <button
+            type="button"
+            className="modal-close"
+            onClick={() => setModalKey(null)}
+          >
+            [ x ]
+          </button>
+          {activeDetail && (
+            <>
+              <pre className="modal-header-art">{`┌────────────────────────────────┐
+│  ${activeDetail.title.padEnd(30)}│
+└────────────────────────────────┘`}</pre>
+              {activeDetail.details.map((d) => (
+                <p key={d} className="modal-text">
+                  {d}
+                </p>
+              ))}
+              {activeDetail.link && (
+                <a
+                  href={activeDetail.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="modal-link"
+                >
+                  [ view on x → ]
+                </a>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </main>
+  )
+}
